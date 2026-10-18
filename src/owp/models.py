@@ -104,17 +104,21 @@ class VisualStyle(StrEnum):
 
 
 class NarrativeFormat(StrEnum):
-    """Candidate video formats.
+    """The video format.
 
-    Q2.1 is the one question with no answer in the doc, so all five remain in
-    scope and the optimizer treats format as a variable to explore (Q4.4).
+    Q2.1 was the one question the requirements doc left unanswered. **Answered
+    2026-10-17: every video is the covered company's own CEO speaking to the
+    viewer**, explaining what agreeing to their privacy policy lets them do
+    with the viewer's data. The five candidates previously in scope are out.
+
+    Left as an enum rather than collapsed into a constant so `Script.format`
+    still records what was made, and so the optimizer keeps reading its levels
+    from here: one member means format is no longer a variable to explore
+    (675 arms become 135), and a second member would put it back in the space
+    (Q4.4) with no other change.
     """
 
-    EXPLAINER = "explainer"
-    SKIT = "skit"
-    WHAT_THEY_KNOW = "what_they_know"
-    COMPARISON = "comparison"
-    HORROR_STORY = "horror_story"
+    CEO_DIRECT_ADDRESS = "ceo_direct_address"
 
 
 class Citation(BaseModel):
@@ -156,6 +160,11 @@ class Script(BaseModel):
     practice: str = Field(description="The single data practice this video is about (Q2.2).")
     format: NarrativeFormat
     hook: str = Field(description="First 1-2 seconds; the scroll-stopper.")
+    hook_citation: Citation | None = Field(
+        default=None,
+        description="Policy text behind the hook. The CEO speaks the hook too, so a hook "
+        "that states a practice needs one; a hook that only asks a question does not.",
+    )
     beats: list[ScriptBeat]
     estimated_seconds: float = Field(description="Target 30-90s (Q2.3).")
 

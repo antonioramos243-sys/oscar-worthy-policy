@@ -4,10 +4,11 @@ Source of record: the "Privacy Policy Videos MVP: Requirements Questions"
 Google Doc, answered in comments. This file records what was decided, where it
 is enforced in code, and the four places the answers still leave a gap.
 
-39 of 40 questions are answered. **Q2.1 has no comment on it** — which narrative
-formats are in scope. All five remain in `NarrativeFormat` and the optimizer
-treats format as a variable, so this does not block, but it means the bandit is
-exploring formats that may not be wanted.
+All 40 questions are answered. **Q2.1 was answered 2026-10-17**, by the owner,
+in conversation rather than in the doc: every video is the covered company's own
+CEO speaking to the viewer, explaining what agreeing to their privacy policy
+lets them do with the viewer's data. See "The Q2.1 answer" below — it is the
+decision with the widest blast radius so far.
 
 ## Carried over as already decided
 
@@ -46,16 +47,65 @@ that would misrepresent a policy nobody read (Q2.7).
 
 | Q | Decision | Where |
 |---|---|---|
-| 2.1 | **Unanswered** | All of `NarrativeFormat` stays in scope |
+| 2.1 | **Answered 2026-10-17**: the company's CEO, to camera, on what agreeing permits | `NarrativeFormat.CEO_DIRECT_ADDRESS`, `verify_attribution` |
 | 2.2 | Several videos per policy, each on one practice | `Script.practice`, `ScriptWriter.practices` |
 | 2.3 | 30–90 seconds | `LengthBucket` |
-| 2.4 | Animation, characters consistent **across** videos | `owp.cast`, `verify_cast`, `HybridRenderer` |
+| 2.4 | Animation, characters consistent **across** videos. Cast decided 2026-10-17: the CEOs of the covered companies | `owp.cast`, `verify_cast`, `HybridRenderer` |
 | 2.5 | Synthetic voice | `owp.voice` |
 | 2.6 | Any model, balancing cost / engineering overhead / quality. A perceived quality score is applied per video and may block posting; dimensions include animation quality, character and narrative consistency, storyline quality | `QualityScore`, `Pipeline.record_review` |
-| 2.7 | Citations not required — personal review covers accuracy — but videos must not misrepresent the policy | `verify_quotes` checks only quotes that are supplied |
+| 2.7 | Citations not required — personal review covers accuracy — but videos must not misrepresent the policy. **Superseded for CEO lines**: see below | `verify_quotes`; `verify_attribution` requires a citation per real-person line |
 | 2.8 | Name the company and use its logo | prompt, `LlmScriptWriter` |
 | 2.9 | Optimize for engaging, shareable videos | `owp.optimize` |
 | 2.10 | **Weekly operational cost ≤ $25 — confirmed firm** | `owp.budget`, enforced in `Pipeline.produce` |
+
+### The Q2.1 answer: the CEO addresses the viewer
+
+**Decided 2026-10-17.** Each video is the CEO of the company whose policy it
+covers, speaking to the viewer, explaining what the viewer's agreement permits.
+Three things follow, and two of them are constraints rather than features.
+
+**The format stops being a variable.** `NarrativeFormat` holds one member, so
+the arm space falls from 675 to 135 (`all_arms`) and the bandit no longer spends
+observations on formats nobody wants. The enum is kept rather than collapsed, so
+adding a second format re-opens the variable with no other change, and a
+variable slot is now free under Q4.4's cap of about five.
+
+**Citations stop being optional — for the CEO.** Q2.7 made them optional because
+every video gets a personal review, and that reasoning held while the cast was
+invented characters: the worst case was being wrong about a company. It does not
+hold now. A line in a video where a named, recognisable person says "I can sell
+what you looked at" is a statement attributed to that individual, and a reviewer
+reading a fluent script is exactly who will not notice that the policy never
+said it. So `verify_attribution` refuses to pass a script in which a
+`real_person` character speaks an uncited line, and `verify_quotes` then proves
+the citation is verbatim in the corpus. Together: in a video, a real person only
+ever says something their own policy says. An invented character still falls
+back to Q2.7.
+
+**The depiction must not be able to pass as real.** This is the one risk the
+format creates that no gate in the pipeline can catch, so it is recorded as a
+constraint on the render and voice stages rather than left implied:
+
+- Flat 2D caricature, never photorealistic. Each real person's `appearance` in
+  `cast.json` says so, and a test enforces that it says so.
+- A plainly synthetic off-the-shelf TTS voice, never a clone of the person's
+  own. Also tested.
+- The render and the generated caption (Q3.4) should carry a visible
+  commentary/satire marker. Not yet enforced — the render stage is a stub, and
+  this is the first thing to wire into it.
+
+**Who the CEO is, is a fact with a shelf life.** A video in which last quarter's
+CEO explains this quarter's policy is wrong about a named person, and review will
+not catch it because the face looks right. So each real person in `cast.json`
+carries `verified_on` and `source`, both required by test. The four currently
+listed were checked on 2026-10-17 against press and institutional sources;
+before the first render, confirm each against the company's own leadership or
+investor-relations page, which is the only primary source.
+
+One CEO covers every target their company publishes a policy for, so the cast
+stays smaller than the 40-target list and the same drawn person recurs across
+all of a company's videos — which is a better answer to Q2.4's consistency
+requirement than the generic cast it replaced.
 
 ### The Q2.4 / Q2.10 conflict: resolved as hybrid
 
@@ -91,14 +141,16 @@ $25 cap rules out every tier above Lite, and Lite is exactly where
 dimensions in Q2.6 - score worst. Paying for takes that the quality score then
 rejects is the worst of both.
 
-Remaining dependency is artwork, not a decision: `cast.json` has placeholder
-appearances and no `asset_dir`, and `plates.json` has four placeholder prompts.
-Nothing renders until the cast is drawn.
+Remaining dependency is artwork, not a decision: `cast.json` now names four real
+CEOs but their appearances are briefs for an artist rather than drawn assets,
+there is no `asset_dir`, and `plates.json` has four placeholder prompts. Nothing
+renders until the cast is drawn.
 
 Also unresolved: Q2.9 asks for tone guardrails and the answer describes an
 optimization goal instead, while Q4.6 makes tone a hard constraint. A hard
 constraint with no stated limit cannot be enforced, so `LlmScriptWriter.tone`
-takes the conservative reading as an explicit parameter.
+takes the conservative reading as an explicit parameter. This matters more since
+Q2.1 was answered: the tone is now a real person's own voice, not a narrator's.
 
 ## 3. Scheduling and notification
 

@@ -1,15 +1,54 @@
 [
   {
-    "id": "narrator",
-    "name": "The Narrator",
-    "role": "Reads the policy aloud with the gravity it does not deserve.",
-    "appearance": "Placeholder - define before the first render.",
-    "voice_id": "en-US-Studio-O"
+    "id": "zuckerberg",
+    "name": "Mark Zuckerberg",
+    "title": "Chief Executive Officer",
+    "company": "Meta Platforms",
+    "role": "Tells the viewer, to camera, what agreeing to Meta's policy lets Meta do.",
+    "real_person": true,
+    "target_slugs": ["instagram"],
+    "appearance": "Placeholder brief for the artist. Flat 2D caricature, deliberately not a likeness: mid-40s, short curly dark hair, pale complexion, plain grey crew-neck t-shirt. Must never read as footage of the real person.",
+    "voice_id": "en-US-Studio-Q",
+    "verified_on": "2026-10-17",
+    "source": "https://www.fortune.com/2026/01/28/meta-q4-earnings-beat-mark-zuckerberg-ai-acceleration"
   },
   {
-    "id": "user",
-    "name": "The User",
-    "role": "Cheerfully taps Accept on everything.",
-    "appearance": "Placeholder - define before the first render."
+    "id": "rascoff",
+    "name": "Spencer Rascoff",
+    "title": "Chief Executive Officer",
+    "company": "Match Group",
+    "role": "Tells the viewer what agreeing to Match Group's policy lets Tinder do.",
+    "real_person": true,
+    "target_slugs": ["tinder"],
+    "appearance": "Placeholder brief for the artist. Flat 2D caricature, deliberately not a likeness: 50s, short dark hair, open-collar shirt, no tie. Must never read as footage of the real person.",
+    "voice_id": "en-US-Neural2-D",
+    "verified_on": "2026-10-17",
+    "source": "https://www.cnbc.com/video/2026/08/05/investors-now-believe-a-tinder-turnaround-is-happening-says-match-group-ceo.html"
+  },
+  {
+    "id": "altman",
+    "name": "Sam Altman",
+    "title": "Chief Executive Officer",
+    "company": "OpenAI",
+    "role": "Tells the viewer what agreeing to OpenAI's policy lets ChatGPT do.",
+    "real_person": true,
+    "target_slugs": ["chatgpt"],
+    "appearance": "Placeholder brief for the artist. Flat 2D caricature, deliberately not a likeness: 40s, short light-brown hair, grey zip-up sweater. Must never read as footage of the real person.",
+    "voice_id": "en-US-Neural2-J",
+    "verified_on": "2026-10-17",
+    "source": "https://forum.openai.com/public/videos/event-replay-sam-altman-on-building-the-future-of-ai-2026-04-06"
+  },
+  {
+    "id": "pichai",
+    "name": "Sundar Pichai",
+    "title": "Chief Executive Officer",
+    "company": "Alphabet (Google)",
+    "role": "Tells the viewer what agreeing to Google's policy lets Google do.",
+    "real_person": true,
+    "target_slugs": ["google-search"],
+    "appearance": "Placeholder brief for the artist. Flat 2D caricature, deliberately not a likeness: 50s, short greying hair, trimmed beard, dark quarter-zip over a collared shirt. Must never read as footage of the real person.",
+    "voice_id": "en-US-Neural2-A",
+    "verified_on": "2026-10-17",
+    "source": "https://www.amacad.org/person/sundarajan-pichai"
   }
 ]

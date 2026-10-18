@@ -5,7 +5,11 @@ caption style, company and category - but caps the count at about five,
 because more than that cannot be optimized at realistic volume. These are the
 five, chosen for the largest expected effect per unit of traffic:
 
-  1. format        - the biggest swing in how a video lands
+  1. format        - kept in the space but now a single level: Q2.1 was
+                     answered 2026-10-17 as the CEO addressing the viewer, so
+                     there is nothing left to explore until a second format is
+                     decided. Adding one to `NarrativeFormat` re-opens it, and
+                     until then a variable slot is free under Q4.4's cap.
   2. hook_style    - decides the first two seconds, which decide retention
   3. length_bucket - 30-90s is a wide range (Q2.3)
   4. visual_style  - within the animation direction set by Q2.4
@@ -72,11 +76,12 @@ class Arm(BaseModel, frozen=True):
 def all_arms() -> list[Arm]:
     """Every combination in the space.
 
-    Note the size: 5 formats x 3 hooks x 3 lengths x 3 styles x 5 hours = 675
-    arms. At four posts a week that is far more arms than observations, which is
-    exactly why Q4.4 caps the variable count - and why the bandit must share
-    evidence across arms per variable rather than treat each as independent.
-    See `owp.optimize.bandit`.
+    Note the size: 1 format x 3 hooks x 3 lengths x 3 styles x 5 hours = 135
+    arms, down from 675 when five formats were in scope. Even 135 is far more
+    arms than a month of observations at four posts a week, which is exactly
+    why Q4.4 caps the variable count - and why the bandit must share evidence
+    across arms per variable rather than treat each as independent. See
+    `owp.optimize.bandit`.
     """
     return [
         Arm(

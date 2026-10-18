@@ -41,14 +41,19 @@ def script() -> Script:
         target_slug="instagram",
         content_hash="a" * 64,
         practice="watch-time tracking",
-        format=NarrativeFormat.WHAT_THEY_KNOW,
-        hook="They know how long you stared.",
+        format=NarrativeFormat.CEO_DIRECT_ADDRESS,
+        hook="Can I tell you what you just agreed to?",
         beats=[
-            ScriptBeat(text="They log what you look at.", character="narrator"),
+            # Every beat is cited because the speaker is a real person (Q2.1).
             ScriptBeat(
-                text="And how long you looked.",
+                text="I can log every post you look at.",
+                citation=Citation(quote="the posts you view"),
+                character="zuckerberg",
+            ),
+            ScriptBeat(
+                text="And how long you looked at it.",
                 citation=Citation(quote="how long you view them"),
-                character="user",
+                character="zuckerberg",
             ),
         ],
         estimated_seconds=30.0,

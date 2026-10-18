@@ -41,7 +41,7 @@ from owp.models import (
 from owp.render.base import Renderer
 from owp.schedule.base import Notifier, Scheduler
 from owp.script.base import ScriptWriter
-from owp.script.verify import verify_cast, verify_quotes
+from owp.script.verify import verify_attribution, verify_cast, verify_quotes
 from owp.voice.base import TtsProvider
 
 
@@ -75,13 +75,16 @@ class Pipeline:
         """Write a script, then check it against the corpus and the cast.
 
         Verification runs here, not in the writer, so swapping writers cannot
-        drop it.
+        drop it. Since the cast became real people (Q2.1), that includes the
+        attribution gate: an uncited line in a CEO's mouth never reaches a
+        renderer, whoever wrote it.
         """
         script = self.writer.write(
             corpus, practice=practice, format=format, target_seconds=target_seconds
         )
         verify_quotes(script, corpus)
         verify_cast(script, self.cast.ids())
+        verify_attribution(script, self.cast)
         return script
 
     def produce(self, script: Script, *, now: datetime, estimated_cost_usd: float = 0.0) -> Video:
