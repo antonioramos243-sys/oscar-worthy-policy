@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets and credentials. NOTE: this repo is PUBLIC - never commit real keys,
+# service-account JSON, or Instagram tokens.
+.env
+.env.*
+!.env.example
+*-service-account.json
+*credentials*.json
+gcp-key*.json
+
+# Pipeline artifacts: policy snapshots, audio, and rendered video are large
+# and/or reproducible. Keep them out of git.
+data/policies/*
+data/renders/*
+!data/**/.gitkeep
+*.mp4
+*.wav
+*.mp3
+
+# macOS
+.DS_Store

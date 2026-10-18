@@ -1,0 +1,6 @@
+[
+  {"slug": "instagram", "company": "Instagram", "category": "social", "rank": 1},
+  {"slug": "tinder", "company": "Tinder", "category": "dating", "rank": 1},
+  {"slug": "chatgpt", "company": "OpenAI (ChatGPT)", "category": "ai", "rank": 1},
+  {"slug": "google-search", "company": "Google", "category": "top_app", "rank": 1}
+]
