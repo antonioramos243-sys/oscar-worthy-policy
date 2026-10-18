@@ -17,7 +17,8 @@ dependencies = [
 # Policy acquisition (component 1).
 acquisition = [
     "httpx>=0.27",
-    "selectolax>=0.3.21",
+    # 1.0 for the lexbor backend; the modest backend it replaced is deprecated.
+    "selectolax>=1.0",
 ]
 # Google Cloud providers: Cloud TTS, Gemini/Veo, Storage, Firestore.
 gcp = [

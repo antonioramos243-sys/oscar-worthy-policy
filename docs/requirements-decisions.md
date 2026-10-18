@@ -21,17 +21,26 @@ posted manually · phone notification at posting time.
 | 1.1 | Cross-category duplicates are replaced by the next-ranked entry | `CuratedTargetSource` raises `DuplicateTargetError` |
 | 1.2 | Ranked by monthly active users (or similar) | `Target.rank` |
 | 1.3 | No Sensor Tower license; rank once when building the index, no API integration. Consider alternatives if Sensor Tower is not possible | `CuratedTargetSource` is the only implementation |
-| 1.4 | US policy of the ranked product; main + cookie + others **merged into one document**, to tell a cohesive story | `PolicyCorpus`, `merge_documents` |
-| 1.5 | US only | `PolicyCorpus` |
-| 1.6 | One-time snapshot; no re-crawls | No version history on `PolicyCorpus` |
-| 1.7 | Manual upload is an acceptable fallback | `PolicySource.extracted_manually` |
-| 1.8 | Cleaned text only — raw HTML is not retained | `PolicyCorpus.text`; `raw_html` removed |
+| 1.4 | US policy of the ranked product; main + cookie + others **merged into one document**, to tell a cohesive story | `PolicyCorpus`, `merge_documents`, `HttpPolicyFetcher.fetch` |
+| 1.5 | US only | `PolicyCorpus`; `Accept-Language: en-US` in `DEFAULT_HEADERS` |
+| 1.6 | One-time snapshot; no re-crawls | No version history on `PolicyCorpus`; `owp.acquisition.store` keys a file by slug alone |
+| 1.7 | Manual upload is an acceptable fallback | `corpus_from_text`, `owp fetch --paste`, `PolicySource.extracted_manually` |
+| 1.8 | Cleaned text only — raw HTML is not retained | `owp.acquisition.clean`; `PolicyCorpus.text`; `raw_html` removed |
 | 1.9 | English only | `PolicyCorpus.text` |
-| 1.10 | No legal constraints to observe | `HttpPolicyFetcher(respect_robots=False)` |
+| 1.10 | No legal constraints to observe | `HttpPolicyFetcher(respect_robots=False)`, honoured when set |
 
 On 1.10: recorded as answered. The flag is kept because privacy-policy pages are
 almost always crawl-allowed, so honouring robots.txt would likely cost no
-coverage if that is ever revisited.
+coverage if that is ever revisited. It is implemented rather than merely
+accepted, so turning it on does what it says.
+
+Two judgement calls the answers did not cover, both made so that a silent
+failure is impossible. A document that cannot be extracted does not fail its
+target — a company that has moved its cookie policy still yields a corpus from
+its main policy — but a page under `MIN_POLICY_CHARS` of text counts as no
+text at all, because a consent wall and a page that renders itself in the
+browser both answer 200 with an almost empty body, and a video written from
+that would misrepresent a policy nobody read (Q2.7).
 
 ## 2. Narrative video generation
 

@@ -19,7 +19,7 @@ Requirements are settled: see [docs/requirements-decisions.md](docs/requirements
 
 | Component | Module | State |
 |---|---|---|
-| 1. Policy acquisition | `owp.acquisition` | Target list + duplicate check **work**; fetch/merge stubbed |
+| 1. Policy acquisition | `owp.acquisition` | **Works**: target list, fetch, clean, merge, store, manual paste-in |
 | 2a. Script writer | `owp.script` | Stubbed; quote + cast verification **work** |
 | 2b. Voiceover | `owp.voice` | Stubbed (Cloud TTS) |
 | 2c. Captions | `owp.captions` | **Works** — cue chunking and SRT |
@@ -43,7 +43,7 @@ project needs 3.12, which uv will fetch.
 
 ```bash
 uv venv --python 3.12
-uv pip install -e ".[dev]"
+uv pip install -e ".[acquisition,dev]"
 cp .env.example .env
 ```
 
@@ -54,12 +54,22 @@ Needed when the matching stage is built, not installed yet: `ffmpeg`
 
 ```bash
 .venv/bin/owp targets    # the 40-target set and what it is missing
+.venv/bin/owp fetch google-search \
+  --url "main_privacy=https://policies.google.com/privacy?hl=en-US" \
+  --url "cookie=https://policies.google.com/technologies/cookies?hl=en-US"
+.venv/bin/owp policy google-search   # read the stored corpus back
+
 .venv/bin/owp plates     # background plate library and what fits this week
 .venv/bin/owp slots      # next posting slots, Eastern, inside quiet hours
 .venv/bin/owp budget     # which generation tiers fit $25/week
 .venv/bin/owp cast       # the recurring characters
 .venv/bin/owp arms       # size of the optimizer's variant space
 ```
+
+`fetch` takes `--url` because the curated list is still a placeholder and
+carries no policy URLs; filling those in belongs with the popularity ranking.
+When a page cannot be extracted, paste the text instead (Q1.7):
+`owp fetch <slug> --paste policy.txt --url main_privacy=<url>`.
 
 ## Checks
 
