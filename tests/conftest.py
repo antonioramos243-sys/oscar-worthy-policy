@@ -6,6 +6,7 @@ import pytest
 
 from owp.models import (
     Citation,
+    DataProcessing,
     NarrativeFormat,
     PolicyCorpus,
     PolicyKind,
@@ -40,16 +41,17 @@ def script() -> Script:
     return Script(
         target_slug="instagram",
         content_hash="a" * 64,
-        practice="watch-time tracking",
-        format=NarrativeFormat.WHAT_THEY_KNOW,
-        hook="They know how long you stared.",
+        processing=DataProcessing(
+            kind="watch-time tracking",
+            evidence=[Citation(quote="how long you view them")],
+        ),
+        format=NarrativeFormat.CEO_DIRECT_ADDRESS,
+        hook="Can I tell you what you just agreed to?",
         beats=[
-            ScriptBeat(text="They log what you look at.", character="narrator"),
-            ScriptBeat(
-                text="And how long you looked.",
-                citation=Citation(quote="how long you view them"),
-                character="user",
-            ),
+            # Written, not quoted: the story is invention, the evidence above
+            # is not (Q2.1). Note the framing - what agreeing permits.
+            ScriptBeat(text="I can see which posts you stopped on.", character="zuckerberg"),
+            ScriptBeat(text="And how long you stayed on each one.", character="zuckerberg"),
         ],
         estimated_seconds=30.0,
     )

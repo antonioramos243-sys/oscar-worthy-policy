@@ -41,7 +41,7 @@ def test_posting_hours_respect_quiet_hours() -> None:
 
 
 def test_arm_space_size_is_known() -> None:
-    assert len(all_arms()) == 675
+    assert len(all_arms()) == 135
 
 
 def test_tone_and_accuracy_are_not_optimizer_variables() -> None:

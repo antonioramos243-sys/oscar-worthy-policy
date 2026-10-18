@@ -20,7 +20,7 @@ Requirements are settled: see [docs/requirements-decisions.md](docs/requirements
 | Component | Module | State |
 |---|---|---|
 | 1. Policy acquisition | `owp.acquisition` | **Works**: target list, fetch, clean, merge, store, manual paste-in |
-| 2a. Script writer | `owp.script` | Stubbed; quote + cast verification **work** |
+| 2a. Script writer | `owp.script` | Stubbed; quote, cast and attribution verification **work** |
 | 2b. Voiceover | `owp.voice` | Stubbed (Cloud TTS) |
 | 2c. Captions | `owp.captions` | **Works** — cue chunking and SRT |
 | 2d. Render | `owp.render` | **Hybrid chosen**; plan resolution works, ffmpeg stubbed |
@@ -62,7 +62,7 @@ Needed when the matching stage is built, not installed yet: `ffmpeg`
 .venv/bin/owp plates     # background plate library and what fits this week
 .venv/bin/owp slots      # next posting slots, Eastern, inside quiet hours
 .venv/bin/owp budget     # which generation tiers fit $25/week
-.venv/bin/owp cast       # the recurring characters
+.venv/bin/owp cast       # the CEO cast and which targets have nobody yet
 .venv/bin/owp arms       # size of the optimizer's variant space
 ```
 

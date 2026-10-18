@@ -171,9 +171,19 @@ def budget(per_week: int = DEFAULT_PER_WEEK, seconds: float = 60.0) -> None:
 
 @app.command()
 def cast() -> None:
-    """List the recurring character cast."""
-    for character in Cast.load().characters:
-        typer.echo(f"{character.id:10} {character.name:16} {character.role}")
+    """List the cast - the CEOs of the covered companies - and what is missing."""
+    loaded = Cast.load()
+    for character in loaded.characters:
+        verified = character.verified_on.isoformat() if character.verified_on else "UNVERIFIED"
+        company = character.company or "-"
+        typer.echo(f"{character.id:12} {character.name:18} {company:18} {verified}")
+        covers = ", ".join(character.target_slugs) or "(no targets yet)"
+        typer.echo(f"{'':12} covers {covers}")
+
+    missing = loaded.missing_for(t.slug for t in CuratedTargetSource().targets())
+    if missing:
+        typer.echo("")
+        typer.echo(f"No cast member yet for: {', '.join(missing)}")
 
 
 @app.command()

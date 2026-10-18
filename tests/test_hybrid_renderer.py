@@ -13,8 +13,14 @@ from owp.render.plates import NoPlatesForStyle, Plate, PlateLibrary
 def cast() -> Cast:
     return Cast(
         characters=[
-            Character(id="narrator", name="The Narrator", role="r", appearance="a"),
-            Character(id="user", name="The User", role="r", appearance="a"),
+            Character(
+                id="zuckerberg", name="Mark Zuckerberg", role="r", appearance="a",
+                real_person=True, target_slugs=["instagram"],
+            ),
+            Character(
+                id="altman", name="Sam Altman", role="r", appearance="a",
+                real_person=True, target_slugs=["chatgpt"],
+            ),
         ]
     )
 
@@ -46,15 +52,16 @@ def test_plan_uses_voiceover_duration_not_the_script_estimate(script: Script) ->
 
 
 def test_plan_resolves_characters_in_first_appearance_order(script: Script) -> None:
+    # The decided format has one speaker, but the renderer must not assume it:
+    # a cameo from another company's CEO is the obvious next variation.
+    script.beats[1].character = "altman"
     plan = HybridRenderer(library=library()).plan(script, voiceover(16.0), cast())
-    assert [c.id for c in plan.characters] == ["narrator", "user"]
+    assert [c.id for c in plan.characters] == ["zuckerberg", "altman"]
 
 
 def test_plan_deduplicates_repeated_characters(script: Script) -> None:
-    for beat in script.beats:
-        beat.character = "narrator"
     plan = HybridRenderer(library=library()).plan(script, voiceover(16.0), cast())
-    assert [c.id for c in plan.characters] == ["narrator"]
+    assert [c.id for c in plan.characters] == ["zuckerberg"]
 
 
 def test_plan_marginal_cost_is_zero(script: Script) -> None:
