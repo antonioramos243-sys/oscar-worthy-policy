@@ -29,6 +29,7 @@ from owp.captions.chunker import cues_from_word_timings
 from owp.cast import Cast
 from owp.models import (
     CaptionTrack,
+    DataProcessing,
     NarrativeFormat,
     PolicyCorpus,
     PostState,
@@ -68,7 +69,7 @@ class Pipeline:
         self,
         corpus: PolicyCorpus,
         *,
-        practice: str,
+        processing: DataProcessing,
         format: NarrativeFormat,
         target_seconds: float = 60.0,
     ) -> Script:
@@ -80,7 +81,7 @@ class Pipeline:
         renderer, whoever wrote it.
         """
         script = self.writer.write(
-            corpus, practice=practice, format=format, target_seconds=target_seconds
+            corpus, processing=processing, format=format, target_seconds=target_seconds
         )
         verify_quotes(script, corpus)
         verify_cast(script, self.cast.ids())

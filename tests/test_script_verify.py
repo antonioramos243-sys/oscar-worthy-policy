@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from owp.cast import Cast, Character
-from owp.models import Citation, PolicyCorpus, Script, ScriptBeat
+from owp.models import Citation, PolicyCorpus, Script
 from owp.script.base import MisrepresentationError
 from owp.script.verify import verify_attribution, verify_cast, verify_quotes
 
@@ -11,7 +11,7 @@ CAST_IDS = {"zuckerberg", "narrator"}
 
 
 def ceo_cast() -> Cast:
-    """One real person and one invented character, to show the gate only binds one."""
+    """One real person and one invented character: the gate only binds the first."""
     return Cast(
         characters=[
             Character(
@@ -35,32 +35,37 @@ def ceo_cast() -> Cast:
 # -- quotes -----------------------------------------------------------------
 
 
-def test_accepts_quote_present_in_corpus(script: Script, corpus: PolicyCorpus) -> None:
+def test_accepts_evidence_present_in_corpus(script: Script, corpus: PolicyCorpus) -> None:
     verify_quotes(script, corpus)
 
 
 def test_tolerates_whitespace_differences(script: Script, corpus: PolicyCorpus) -> None:
-    script.beats[1].citation = Citation(quote="how   long\nyou view them")
+    script.processing.evidence = [Citation(quote="how   long\nyou view them")]
     verify_quotes(script, corpus)
 
 
-def test_rejects_quote_absent_from_corpus(script: Script, corpus: PolicyCorpus) -> None:
-    script.beats[1].citation = Citation(quote="we sell your data to the highest bidder")
-    with pytest.raises(MisrepresentationError, match="instagram"):
+def test_rejects_evidence_absent_from_corpus(script: Script, corpus: PolicyCorpus) -> None:
+    # The one failure review is worst at catching: a confident paraphrase of
+    # something the policy never said, offered as the licence for a story.
+    script.processing.evidence = [Citation(quote="we sell your data to the highest bidder")]
+    with pytest.raises(MisrepresentationError, match="watch-time tracking"):
         verify_quotes(script, corpus)
 
 
-def test_uncited_beats_are_allowed_by_the_quote_check(
-    corpus: PolicyCorpus, script: Script
-) -> None:
-    # Still true of `verify_quotes` itself (Q2.7). What rejects an uncited line
-    # in a real person's mouth is `verify_attribution`, below.
-    script.beats = [ScriptBeat(text="A bold uncited claim.")]
+def test_written_beats_need_no_citation(script: Script, corpus: PolicyCorpus) -> None:
+    # The dialogue is a story about what agreeing permits, not a quotation, so
+    # there is nothing here to check against the document (Q2.1).
+    assert all(beat.citation is None for beat in script.beats)
     verify_quotes(script, corpus)
 
 
+def test_a_beat_that_does_quote_is_checked(script: Script, corpus: PolicyCorpus) -> None:
+    script.beats[0].citation = Citation(quote="a promise the policy never made")
+    with pytest.raises(MisrepresentationError, match="Beat 0"):
+        verify_quotes(script, corpus)
+
+
 def test_a_cited_hook_is_checked_too(script: Script, corpus: PolicyCorpus) -> None:
-    # The CEO speaks the hook, so it is checked like any other line.
     script.hook_citation = Citation(quote="a promise the policy never made")
     with pytest.raises(MisrepresentationError, match="The hook"):
         verify_quotes(script, corpus)
@@ -90,34 +95,42 @@ def test_cast_check_ignores_beats_with_no_character(script: Script) -> None:
     verify_cast(script, set())
 
 
-# -- attribution (the gate that came with the CEO cast) ---------------------
+# -- attribution: the grounding, not the dialogue ---------------------------
 
 
-def test_a_fully_cited_ceo_script_passes(script: Script) -> None:
+def test_a_grounded_ceo_story_passes(script: Script) -> None:
     verify_attribution(script, ceo_cast())
 
 
-def test_an_uncited_line_in_a_real_persons_mouth_is_refused(script: Script) -> None:
-    # The point of the gate: this is not a mistake about Meta, it is a
-    # sentence attributed to a named man who never said it.
-    script.beats[1].citation = None
-    with pytest.raises(MisrepresentationError, match="uncited line"):
+def test_an_ungrounded_story_in_a_real_persons_mouth_is_refused(script: Script) -> None:
+    # The story may be invented; what it dramatizes may not. With no evidence
+    # the video is a named man describing something no document establishes.
+    script.processing.evidence = []
+    with pytest.raises(MisrepresentationError, match="no policy text behind it"):
         verify_attribution(script, ceo_cast())
 
 
-def test_the_refusal_names_the_person_and_the_line(script: Script) -> None:
-    script.beats[0].citation = None
+def test_the_refusal_names_the_person_and_the_processing(script: Script) -> None:
+    script.processing.evidence = []
     with pytest.raises(MisrepresentationError, match="zuckerberg") as caught:
         verify_attribution(script, ceo_cast())
-    assert "I can log every post" in str(caught.value)
+    assert "watch-time tracking" in str(caught.value)
 
 
-def test_an_invented_character_may_speak_uncited(script: Script) -> None:
-    # The gate is about real people, not about citations in general: an
-    # invented narrator falls back to Q2.7, where review covers accuracy.
-    script.beats[0].character = "narrator"
-    script.beats[0].citation = None
+def test_an_invented_character_needs_no_grounding(script: Script) -> None:
+    # The gate is about real people. An invented narrator falls back to Q2.7,
+    # where review covers accuracy.
+    for beat in script.beats:
+        beat.character = "narrator"
+    script.processing.evidence = []
     verify_attribution(script, ceo_cast())
+
+
+def test_one_real_speaker_among_several_still_needs_grounding(script: Script) -> None:
+    script.beats[0].character = "narrator"
+    script.processing.evidence = []
+    with pytest.raises(MisrepresentationError, match="zuckerberg"):
+        verify_attribution(script, ceo_cast())
 
 
 def test_a_beat_with_no_speaker_is_refused(script: Script) -> None:

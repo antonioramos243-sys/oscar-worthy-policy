@@ -122,13 +122,16 @@ class NarrativeFormat(StrEnum):
 
 
 class Citation(BaseModel):
-    """Policy text supporting a claim.
+    """Policy text, verbatim.
 
-    Optional: Q2.7 does not require per-claim citations, because every video
-    gets a personal review. Where the writer does supply one, it is checked
-    verbatim against the corpus - cheap insurance against the one failure that
-    review is worst at catching, a confident paraphrase of something the policy
-    never said.
+    Two jobs. As `DataProcessing.evidence` it is required: it is what
+    establishes that a company may do the thing a video dramatizes. On a
+    `ScriptBeat` it stays optional, for the rarer line that does quote the
+    document (Q2.7 leaves per-line citations to review).
+
+    Either way, whatever is supplied is checked against the corpus verbatim -
+    cheap insurance against the one failure review is worst at catching, a
+    confident paraphrase of something the policy never said.
     """
 
     quote: str = Field(description="Verbatim excerpt from the policy corpus.")
@@ -137,8 +140,35 @@ class Citation(BaseModel):
     char_end: int | None = None
 
 
+class DataProcessing(BaseModel):
+    """One kind of data processing a policy establishes the company may do.
+
+    The pivot of the pipeline. A corpus is mined for these, one video covers
+    one of them (Q2.2), and the video is a dramatization of it: the CEO telling
+    the viewer what their agreement permits (Q2.1).
+
+    The split between the two fields is the point. `kind` and `evidence` are
+    claims about the document; the beats that dramatize them are written, not
+    quoted. So everything that checks a script against a corpus checks here,
+    and never checks the dialogue - a story cannot be verbatim and still be a
+    story.
+    """
+
+    kind: str = Field(
+        description="The processing, named: 'builds an interest profile for advertisers'."
+    )
+    evidence: list[Citation] = Field(
+        description="Verbatim policy text establishing that the company may do this."
+    )
+
+
 class ScriptBeat(BaseModel):
-    """One narrated line, optionally with the evidence behind it."""
+    """One narrated line.
+
+    `text` is written, not quoted: the CEO's side of a story about what
+    agreeing permits. `citation` is for the occasional line that does quote the
+    policy; the evidence for the video as a whole lives on its `DataProcessing`.
+    """
 
     text: str = Field(description="What the voiceover says.")
     citation: Citation | None = None
@@ -149,24 +179,36 @@ class ScriptBeat(BaseModel):
 
 
 class Script(BaseModel):
-    """A script for one video, covering one data practice.
+    """A script for one video: one kind of data processing, dramatized.
 
-    Q2.2: several videos per policy, each focused on a specific practice, so a
-    script names the practice it covers rather than the whole policy.
+    Q2.2: several videos per policy, each focused on one practice. The practice
+    travels as `processing`, with the policy text behind it, so a script
+    carries what licenses the story and not merely what the story is about -
+    which is what makes alignment checkable at review (Q3.3).
+
+    The beats are a story the CEO tells the viewer, not a summary of the
+    document (Q2.1). They are invention; `processing.evidence` is not.
     """
 
     target_slug: str
     content_hash: str = Field(description="Hash of the corpus this was written from.")
-    practice: str = Field(description="The single data practice this video is about (Q2.2).")
+    processing: DataProcessing = Field(
+        description="The processing this video dramatizes, and the policy text behind it."
+    )
     format: NarrativeFormat
     hook: str = Field(description="First 1-2 seconds; the scroll-stopper.")
     hook_citation: Citation | None = Field(
         default=None,
-        description="Policy text behind the hook. The CEO speaks the hook too, so a hook "
-        "that states a practice needs one; a hook that only asks a question does not.",
+        description="Only for a hook that quotes the policy outright; a hook that opens "
+        "the story, or asks a question, needs none.",
     )
     beats: list[ScriptBeat]
     estimated_seconds: float = Field(description="Target 30-90s (Q2.3).")
+
+    @property
+    def practice(self) -> str:
+        """The processing type by name, which is how later stages label a video."""
+        return self.processing.kind
 
     @property
     def narration(self) -> str:

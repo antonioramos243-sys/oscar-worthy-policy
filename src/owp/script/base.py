@@ -4,33 +4,39 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from owp.models import NarrativeFormat, PolicyCorpus, Script
+from owp.models import DataProcessing, NarrativeFormat, PolicyCorpus, Script
 
 
 class ScriptWriter(Protocol):
     """Writes video scripts from a policy corpus."""
 
-    def practices(self, corpus: PolicyCorpus, *, limit: int) -> list[str]:
-        """Identify the distinct data practices worth a video each (Q2.2)."""
+    def practices(self, corpus: PolicyCorpus, *, limit: int) -> list[DataProcessing]:
+        """Identify the kinds of data processing worth a video each (Q2.2).
+
+        Each comes back with the verbatim policy text establishing it, because
+        the script written from it will be a dramatization and nothing after
+        this point is checkable against the document.
+        """
         ...
 
     def write(
         self,
         corpus: PolicyCorpus,
         *,
-        practice: str,
+        processing: DataProcessing,
         format: NarrativeFormat,
         target_seconds: float,
     ) -> Script:
-        """Produce one script about one practice."""
+        """Dramatize one kind of processing as one script (Q2.1)."""
         ...
 
 
 class MisrepresentationError(ValueError):
-    """Raised when a script's cited quote is not in the policy corpus.
+    """Raised when a script is not licensed by the policy it claims to be about.
 
-    Q2.7 does not require citations - review covers accuracy - but it does
-    require that videos not misrepresent the policy. Where the writer supplies
-    a quote, it must be real. Q4.6 makes accuracy a hard constraint, so this is
-    an error rather than a score.
+    Two cases: a quote that is not in the corpus, and a real person speaking in
+    a script whose processing has no evidence behind it. Q2.7 leaves per-line
+    accuracy to review, but Q4.6 makes accuracy a hard constraint, and once the
+    speaker is a named individual the grounding stops being a matter of degree.
+    So this is an error rather than a score.
     """

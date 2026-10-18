@@ -4,11 +4,12 @@ Source of record: the "Privacy Policy Videos MVP: Requirements Questions"
 Google Doc, answered in comments. This file records what was decided, where it
 is enforced in code, and the four places the answers still leave a gap.
 
-All 40 questions are answered. **Q2.1 was answered 2026-10-17**, by the owner,
-in conversation rather than in the doc: every video is the covered company's own
-CEO speaking to the viewer, explaining what agreeing to their privacy policy
-lets them do with the viewer's data. See "The Q2.1 answer" below — it is the
-decision with the widest blast radius so far.
+All 40 questions are answered. **Q2.1 was answered 2026-10-17/18**, by the
+owner, in conversation rather than in the doc: a policy is mined for the types
+of data processing the viewer agrees to, and every video is the covered
+company's own CEO telling the viewer a creepy story about what they can now do
+with that data. See "The Q2.1 answer" below — it is the decision with the widest
+blast radius so far, and it moved where accuracy is enforced.
 
 ## Carried over as already decided
 
@@ -47,13 +48,13 @@ that would misrepresent a policy nobody read (Q2.7).
 
 | Q | Decision | Where |
 |---|---|---|
-| 2.1 | **Answered 2026-10-17**: the company's CEO, to camera, on what agreeing permits | `NarrativeFormat.CEO_DIRECT_ADDRESS`, `verify_attribution` |
-| 2.2 | Several videos per policy, each on one practice | `Script.practice`, `ScriptWriter.practices` |
+| 2.1 | **Answered 2026-10-17/18**: the company's CEO, to camera, telling a creepy story about what agreeing permits | `NarrativeFormat.CEO_DIRECT_ADDRESS`, `DataProcessing`, `verify_attribution` |
+| 2.2 | Several videos per policy, each on one practice | `Script.processing`, `ScriptWriter.practices` returns grounded `DataProcessing` |
 | 2.3 | 30–90 seconds | `LengthBucket` |
 | 2.4 | Animation, characters consistent **across** videos. Cast decided 2026-10-17: the CEOs of the covered companies | `owp.cast`, `verify_cast`, `HybridRenderer` |
 | 2.5 | Synthetic voice | `owp.voice` |
 | 2.6 | Any model, balancing cost / engineering overhead / quality. A perceived quality score is applied per video and may block posting; dimensions include animation quality, character and narrative consistency, storyline quality | `QualityScore`, `Pipeline.record_review` |
-| 2.7 | Citations not required — personal review covers accuracy — but videos must not misrepresent the policy. **Superseded for CEO lines**: see below | `verify_quotes`; `verify_attribution` requires a citation per real-person line |
+| 2.7 | Citations not required — personal review covers accuracy — but videos must not misrepresent the policy. **Relocated, not relaxed**: the grounding is checked, the dialogue is not | `verify_quotes` on `DataProcessing.evidence`; `verify_attribution` requires grounding when a real person speaks |
 | 2.8 | Name the company and use its logo | prompt, `LlmScriptWriter` |
 | 2.9 | Optimize for engaging, shareable videos | `owp.optimize` |
 | 2.10 | **Weekly operational cost ≤ $25 — confirmed firm** | `owp.budget`, enforced in `Pipeline.produce` |
@@ -70,17 +71,35 @@ observations on formats nobody wants. The enum is kept rather than collapsed, so
 adding a second format re-opens the variable with no other change, and a
 variable slot is now free under Q4.4's cap of about five.
 
-**Citations stop being optional — for the CEO.** Q2.7 made them optional because
-every video gets a personal review, and that reasoning held while the cast was
-invented characters: the worst case was being wrong about a company. It does not
-hold now. A line in a video where a named, recognisable person says "I can sell
-what you looked at" is a statement attributed to that individual, and a reviewer
-reading a fluent script is exactly who will not notice that the policy never
-said it. So `verify_attribution` refuses to pass a script in which a
-`real_person` character speaks an uncited line, and `verify_quotes` then proves
-the citation is verbatim in the corpus. Together: in a video, a real person only
-ever says something their own policy says. An invented character still falls
-back to Q2.7.
+**A video is a dramatization, and the grounding is what gets checked.** The
+owner settled the shape on 2026-10-18: a policy is mined for the *types of data
+processing* the viewer agrees to, and the script is then a creepy story aligned
+with one of them — the CEO telling the viewer what they can now do with that
+data. The dialogue is therefore invention, and requiring it to be quotable would
+rule out the format.
+
+So the verbatim requirement sits on the processing, not the lines.
+`DataProcessing` carries a `kind` and the `evidence` that establishes it;
+`Script.processing` says which one a video dramatizes; `verify_quotes` proves
+that evidence is in the corpus; and `verify_attribution` refuses any script in
+which a real, named person speaks while the processing has no evidence behind
+it. A story can be as unsettling as it likes, provided the thing it is
+unsettling *about* is established by the document. An invented character needs
+no grounding and falls back to Q2.7.
+
+**Capability, never conduct.** This is the line that keeps the format
+commentary rather than a claim about a person, and it is the first guardrail in
+the writer's prompt contract. The subject is what the viewer's agreement
+*permits* — "I can match the photos you deleted to the ones you kept" — never an
+assertion that the company did a particular thing to a particular viewer. The
+first is commentary on a published document; the second is a statement of fact
+about a named individual, said by an animation of that individual.
+
+**Two things no gate can check**, which is why they are review's job (Q2.6) and
+why the evidence travels with the script to the review page (Q3.3): whether the
+story follows from the processing it cites rather than from something adjacent
+and worse, and whether it stays in capability framing. `verify_attribution`
+documents both as out of its reach rather than implying it has them covered.
 
 **The depiction must not be able to pass as real.** This is the one risk the
 format creates that no gate in the pipeline can catch, so it is recorded as a
@@ -146,11 +165,14 @@ CEOs but their appearances are briefs for an artist rather than drawn assets,
 there is no `asset_dir`, and `plates.json` has four placeholder prompts. Nothing
 renders until the cast is drawn.
 
-Also unresolved: Q2.9 asks for tone guardrails and the answer describes an
-optimization goal instead, while Q4.6 makes tone a hard constraint. A hard
-constraint with no stated limit cannot be enforced, so `LlmScriptWriter.tone`
-takes the conservative reading as an explicit parameter. This matters more since
-Q2.1 was answered: the tone is now a real person's own voice, not a narrator's.
+Q2.9 is now half-resolved. It asked for tone guardrails and the answer described
+an optimization goal, while Q4.6 makes tone a hard constraint the optimizer may
+never trade off. The owner has since set the **register** — creepy, first
+person, the calm of someone describing what they are allowed to do — which is
+the default of `LlmScriptWriter.tone`. What is still unstated is the **ceiling**:
+how unsettling is too unsettling. A hard constraint with no stated limit cannot
+be enforced in code, so tone stays an explicit parameter and review is the
+limit. This matters more than it did, because the voice is now a real person's.
 
 ## 3. Scheduling and notification
 
