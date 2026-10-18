@@ -1,0 +1,6 @@
+[
+  {"id": "flat-office-01", "style": "flat", "prompt": "Placeholder - empty open-plan office, flat vector style, slow pan, no people."},
+  {"id": "flat-phone-01", "style": "flat", "prompt": "Placeholder - close on a phone screen glow in a dark room, flat vector style, no people."},
+  {"id": "noir-server-01", "style": "noir", "prompt": "Placeholder - server room in hard shadow, noir lighting, slow dolly, no people."},
+  {"id": "corporate-lobby-01", "style": "corporate", "prompt": "Placeholder - glass corporate lobby, bright and neutral, slow push in, no people."}
+]

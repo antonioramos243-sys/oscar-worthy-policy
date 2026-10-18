@@ -1,0 +1,15 @@
+[
+  {
+    "id": "narrator",
+    "name": "The Narrator",
+    "role": "Reads the policy aloud with the gravity it does not deserve.",
+    "appearance": "Placeholder - define before the first render.",
+    "voice_id": "en-US-Studio-O"
+  },
+  {
+    "id": "user",
+    "name": "The User",
+    "role": "Cheerfully taps Accept on everything.",
+    "appearance": "Placeholder - define before the first render."
+  }
+]

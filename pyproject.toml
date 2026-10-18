@@ -1,0 +1,57 @@
+[project]
+name = "owp"
+description = "Oscar Worthy Policy - turns privacy policies into short narrative videos for Instagram."
+version = "0.1.0"
+requires-python = ">=3.12"
+readme = "README.md"
+
+# Kept deliberately thin: every stage is a stub behind a Protocol, so nothing
+# here is load-bearing yet. Add a dependency when the stage that needs it is
+# actually implemented, not before.
+dependencies = [
+    "pydantic>=2.9",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+# Policy acquisition (component 1).
+acquisition = [
+    "httpx>=0.27",
+    "selectolax>=0.3.21",
+]
+# Google Cloud providers: Cloud TTS, Gemini/Veo, Storage, Firestore.
+gcp = [
+    "google-cloud-texttospeech>=2.17",
+    "google-cloud-storage>=2.18",
+    "google-cloud-firestore>=2.19",
+]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[project.scripts]
+owp = "owp.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/owp"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["owp"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
