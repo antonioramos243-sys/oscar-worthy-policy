@@ -2,65 +2,57 @@
 
 Turns the privacy policies of popular apps into short narrative videos for Instagram.
 
-Pipeline:
-
 ```
-target -> policy snapshot -> script (cited) -> verify -> voiceover -> captions
-       -> render -> schedule -> phone notification -> [manual post] -> metrics
+target -> merged policy corpus -> script (per practice) -> verify -> voiceover
+       -> captions -> animate -> schedule -> email notification
+       -> [manual post] -> metrics -> bandit
 ```
 
-The system never posts. It produces a finished video and notifies a phone at the
-scheduled time; posting is manual.
+The system never posts. It produces a finished video and emails a link to an
+authenticated review page at the scheduled time; posting is manual, and the
+Instagram URL is pasted back afterwards.
+
+Requirements are settled: see [docs/requirements-decisions.md](docs/requirements-decisions.md).
+39 of 40 questions are answered, and that file lists the four gaps that remain.
 
 ## Status
 
-Scaffold. The stage boundaries, domain model, and accuracy gates are in place;
-most stages raise `NotImplementedError` with the decision that blocks them. See
-[docs/requirements-open-questions.md](docs/requirements-open-questions.md).
-
 | Component | Module | State |
 |---|---|---|
-| 1. Policy acquisition | `owp.acquisition` | Target list works; fetching stubbed (Q1.10, Q1.4) |
-| 2a. Script writer | `owp.script` | Stubbed (Q2.1, Q2.6, Q2.8, Q2.9); citation check **works** |
-| 2b. Voiceover | `owp.voice` | Stubbed (Q2.5) |
+| 1. Policy acquisition | `owp.acquisition` | Target list + duplicate check **work**; fetch/merge stubbed |
+| 2a. Script writer | `owp.script` | Stubbed; quote + cast verification **work** |
+| 2b. Voiceover | `owp.voice` | Stubbed (Cloud TTS) |
 | 2c. Captions | `owp.captions` | **Works** — cue chunking and SRT |
-| 2d. Render | `owp.render` | Stubbed (Q2.4 — style choice changes the implementation) |
-| 3. Schedule + notify | `owp.schedule` | Stubbed (Q3.2, Q3.3) |
-| 4. Metrics | `owp.metrics` | Stubbed (Q4.1 — needs a Business/Creator account) |
-| 4. Optimizer | — | Not scaffolded; no primary objective chosen yet (Q4.2) |
+| 2d. Render | `owp.render` | Two paths scaffolded; **animation approach not decided** |
+| — Character cast | `owp.cast` | **Works** — cast registry; artwork not drawn |
+| — Budget cap | `owp.budget` | **Works** — $25/week enforced before spending |
+| 3. Schedule | `owp.schedule.slots` | **Works** — 4/week, Eastern, 09:00–22:00 |
+| 3. Notify | `owp.schedule.notifier` | Stubbed (email; needs the review page) |
+| 4. Metrics | `owp.metrics` | Stubbed (Creator account confirmed) |
+| 4. Optimizer | `owp.optimize` | **Works** — factored bandit, objective, 5 variables |
 
 ## Setup
 
-Requires [uv](https://docs.astral.sh/uv/). The system Python here is 3.9; the
+Requires [uv](https://docs.astral.sh/uv/). System Python here is 3.9; the
 project needs 3.12, which uv will fetch.
 
 ```bash
 uv venv --python 3.12
 uv pip install -e ".[dev]"
+cp .env.example .env
 ```
 
-Then:
+Needed when the matching stage is built, not installed yet: `ffmpeg`
+(rendering), `gcloud` (deploys).
+
+## Try the parts that work
 
 ```bash
-cp .env.example .env   # fill in as credentials become available
-.venv/bin/owp config   # show resolved settings
-.venv/bin/owp targets  # list targets and what the set is missing
-```
-
-Not yet installed on this machine, needed when the matching stage is built:
-
-- `ffmpeg` — rendering (`brew install ffmpeg`)
-- `gcloud` — GCP deploys (`brew install --cask google-cloud-sdk`)
-- `terraform` — infrastructure, if used
-
-## Try the part that works
-
-Captions are derived from the TTS stage's word timings, so they can be
-exercised before TTS exists:
-
-```bash
-echo '[{"word":"They","start_s":0.0,"end_s":0.3},{"word":"know","start_s":0.3,"end_s":0.6}]' \
-  | .venv/bin/owp captions /dev/stdin
+.venv/bin/owp targets    # the 40-target set and what it is missing
+.venv/bin/owp slots      # next posting slots, Eastern, inside quiet hours
+.venv/bin/owp budget     # which generation tiers fit $25/week
+.venv/bin/owp cast       # the recurring characters
+.venv/bin/owp arms       # size of the optimizer's variant space
 ```
 
 ## Checks
@@ -73,26 +65,33 @@ echo '[{"word":"They","start_s":0.0,"end_s":0.3},{"word":"know","start_s":0.3,"e
 
 ## Design notes
 
-**Accuracy is a gate, not a score.** `owp.script.verify.verify_citations`
-requires every cited quote to appear verbatim in the policy snapshot, and
-`Pipeline.draft` runs it outside the writer so no writer can skip it.
-`Pipeline.produce` additionally refuses to render a script that is not marked
-reviewed.
+**The $25/week cap is enforced in code, not by a billing alert.** The dominant
+cost is billed per second of generated video, so `Pipeline.produce` checks
+`owp.budget.check_affordable` *before* rendering. A billing alert tells you
+after the money is gone.
 
-**Captions come from TTS timepoints, not forced alignment.** Google Cloud TTS
-reports timepoints for SSML `<mark>` elements; feeding those into
-`cues_from_word_timings` avoids a whole alignment dependency. Alignment is the
-fallback if the voice stage changes.
+**Character consistency is a state problem, not a rendering problem.** Q2.4
+wants the same characters across every video, so the cast lives in `cast.json`
+with a stable id per character, and `verify_cast` fails a script that names an
+unknown one. Both renderers read the same cast.
 
-**Snapshots are immutable.** `PolicySnapshot.content_hash` is over cleaned text
-rather than raw HTML, so markup churn doesn't register as a policy change.
-`Script.content_hash` records which snapshot it was written from, so a script
-can be invalidated when its policy changes.
+**Captions come from TTS timepoints, not forced alignment.** Cloud TTS reports
+timepoints for SSML `<mark>` elements; feeding those to
+`cues_from_word_timings` avoids an alignment dependency.
 
-**Stages are Protocols.** The undecided stages have more than one plausible
-implementation (five visual styles, six notification channels, two voice
-approaches), so each is an interface with a stub behind it.
+**The bandit learns per variable, not per arm.** The space is 675 arms and the
+cadence is four posts a week, so a per-arm bandit would never leave its first
+pull. Each observation updates all five dimensions instead. That gives up
+interaction effects to learn anything at all at this volume.
+
+**Accuracy and tone are not optimizer variables.** Q4.6 makes them hard
+constraints, enforced by absence from the arm space — a constraint that is
+merely weighted is one that eventually gets traded away.
+
+**Quote verification is not an accuracy gate.** Q2.7 puts accuracy on personal
+review. `verify_quotes` catches one thing review is bad at: a fluent quote the
+policy never contained.
 
 > **This repository is public.** Never commit service-account JSON, API keys, or
-> Instagram tokens. `.gitignore` covers the usual names, but it is not a
-> substitute for checking `git diff --staged`.
+> Instagram tokens. `.gitignore` covers the usual names; it is not a substitute
+> for checking `git diff --staged`.

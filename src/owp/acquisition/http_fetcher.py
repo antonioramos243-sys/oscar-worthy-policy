@@ -1,10 +1,13 @@
-"""Fetches policy pages over HTTP and reduces them to clean text.
+"""Fetches policy pages over HTTP, cleans them, and merges them per target.
 
-STUB. Before this is implemented, two questions need answers:
-  - Q1.10: are we honouring robots.txt, and does each site's ToS need review?
-    The fetcher should refuse disallowed paths by default rather than leave
-    that to the caller.
-  - Q1.8: store raw HTML, cleaned text, or both. The model keeps both.
+STUB. The shape is settled now: fetch the US version (Q1.5) of each policy a
+target publishes, clean to text, concatenate under per-document headings, and
+store once (Q1.6) as cleaned text only (Q1.8).
+
+On robots.txt: Q1.10 says there are no legal constraints to observe, so
+`respect_robots` defaults to False. It is kept as a flag because flipping it
+costs nothing and privacy-policy pages are almost always crawl-allowed, so
+turning it on is unlikely to cost coverage if that decision is revisited.
 """
 
 from __future__ import annotations
@@ -12,23 +15,34 @@ from __future__ import annotations
 import hashlib
 
 from owp.acquisition.base import PolicyFetcher
-from owp.models import PolicySnapshot, Target
+from owp.models import PolicyCorpus, Target
 
 
 def content_hash(text: str) -> str:
-    """sha256 over cleaned text, used for change detection between snapshots."""
+    """sha256 over cleaned text, so a script can be tied to the corpus it used."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-class HttpPolicyFetcher(PolicyFetcher):
-    """Retrieves and cleans policy documents."""
+def merge_documents(parts: dict[str, str]) -> str:
+    """Join cleaned documents into one corpus under stable headings.
 
-    def __init__(self, *, respect_robots: bool = True, timeout_s: float = 30.0) -> None:
+    Headings are kept so the script writer can attribute a practice to the
+    cookie policy rather than the main one, and so a reviewer can find it.
+    """
+    return "\n\n".join(
+        f"## {name}\n\n{text.strip()}" for name, text in parts.items() if text.strip()
+    )
+
+
+class HttpPolicyFetcher(PolicyFetcher):
+    """Retrieves, cleans and merges policy documents."""
+
+    def __init__(self, *, respect_robots: bool = False, timeout_s: float = 30.0) -> None:
         self.respect_robots = respect_robots
         self.timeout_s = timeout_s
 
-    def fetch(self, target: Target) -> list[PolicySnapshot]:
+    def fetch(self, target: Target) -> PolicyCorpus:
         raise NotImplementedError(
-            "Policy fetching is not implemented. Blocked on Q1.10 (robots.txt/ToS policy) "
-            "and Q1.4 (which of a company's policies are in scope)."
+            "Policy fetching is not implemented. Requirements are settled; this is "
+            "straightforward work (fetch, clean, merge) with no open decisions."
         )

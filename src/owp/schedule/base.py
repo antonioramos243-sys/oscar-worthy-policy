@@ -9,34 +9,33 @@ from owp.models import ScheduledPost, Video
 
 
 class Scheduler(Protocol):
-    """Assigns a posting slot to a finished video."""
+    """Assigns posting slots to finished videos.
 
-    def schedule(self, video: Video, target_slug: str) -> ScheduledPost:
-        """Place `video` in the next free slot.
+    Q3.7: no approval queue - every finished video goes straight to the
+    schedule. Review happens at notification time, where the quality score is
+    applied (Q2.6).
+    """
 
-        Cadence and whether slots are fixed or optimizer-chosen are open
-        (Q3.1), as is whether an approval queue sits in front of scheduling
-        (Q3.7).
-        """
+    def schedule(self, video: Video, target_slug: str, practice: str) -> ScheduledPost:
+        """Place `video` in the next free slot."""
         ...
 
     def due(self, now: datetime) -> list[ScheduledPost]:
-        """Posts whose slot has arrived and which have not been notified yet."""
+        """Posts whose slot has arrived and which have not been notified."""
+        ...
+
+    def roll(self, post: ScheduledPost, now: datetime) -> ScheduledPost:
+        """Move a missed post to the next slot (Q3.6)."""
         ...
 
 
 class Notifier(Protocol):
     """Delivers the 'your video is ready' notification.
 
-    This is the system's only outbound action: posting itself is manual, from
-    Antonio's phone.
+    The system's only outbound action: posting is manual (Q3.8 - Antonio pastes
+    the Instagram URL back afterwards).
     """
 
     def notify(self, post: ScheduledPost) -> None:
-        """Send a notification carrying a link to the video.
-
-        The channel is open (Q3.2) and so is what the link opens (Q3.3) - a
-        direct download, a signed Cloud Storage URL, or a small web page
-        carrying the video, caption and hashtags together.
-        """
+        """Send a notification linking to the review page for `post`."""
         ...

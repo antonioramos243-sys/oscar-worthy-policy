@@ -1,22 +1,25 @@
 """Instagram Graph API metrics.
 
-STUB, and blocked on something outside the code: Graph API insights require a
-Business or Creator account, which is unconfirmed (Q4.1). If the account is
-personal, this component cannot be built as specified at all and the fallback
-is manual entry of a few numbers per post.
+STUB. Q4.1 confirms a Creator account, so Graph API insights are available.
 
-No optimizer module is scaffolded. Q4.2 has not named a single primary
-objective, and an optimizer without one would just encode a guess. Collect
-metrics first; add the optimizer when the objective exists.
+Q4.3 sets the pull schedule at 1h, 3h, 9h, 24h and 7d. It does not say which
+window scores a variant; `owp.models.SCORING_WINDOW` picks 24h, long enough to
+capture a Reel's first distribution wave and short enough that the bandit is
+not blocked a week per observation. 7d is kept for reporting.
+
+Q4.8/Q4.10: comment counts only - no comment text is collected, and engagement
+data is retained indefinitely.
 """
 
 from __future__ import annotations
 
-from owp.metrics.base import MetricsSource
 from owp.models import MetricsWindow, PostMetrics, ScheduledPost
 
+#: Q4.3, in hours after posting.
+PULL_SCHEDULE_HOURS: tuple[float, ...] = (1, 3, 9, 24, 168)
 
-class InstagramGraphMetrics(MetricsSource):
+
+class InstagramGraphMetrics:
     """Pulls insights for a post via the Instagram Graph API."""
 
     def __init__(self, *, ig_user_id: str, access_token: str) -> None:
@@ -25,6 +28,5 @@ class InstagramGraphMetrics(MetricsSource):
 
     def pull(self, post: ScheduledPost, window: MetricsWindow) -> PostMetrics:
         raise NotImplementedError(
-            "Metrics collection is not implemented. Blocked on Q4.1 (Business/Creator "
-            "account) and Q4.3 (which pull windows)."
+            "Metrics collection is not implemented. Requirements are settled (Q4.1, Q4.3)."
         )

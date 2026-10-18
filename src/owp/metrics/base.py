@@ -13,7 +13,7 @@ class MetricsSource(Protocol):
     def pull(self, post: ScheduledPost, window: MetricsWindow) -> PostMetrics:
         """Fetch metrics for one post at one observation window.
 
-        Requires `post.instagram_url`, which only exists once the post is
-        confirmed live - and how the system learns that is open (Q3.8).
+        Requires `post.instagram_url`, which exists once Antonio pastes it back
+        after posting (Q3.8).
         """
         ...

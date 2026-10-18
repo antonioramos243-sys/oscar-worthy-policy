@@ -1,7 +1,13 @@
-"""Component 2a: turning a policy snapshot into a cited script."""
+"""Component 2a: turning a policy corpus into scripts."""
 
-from owp.script.base import ScriptWriter, UncitedClaimError
+from owp.script.base import MisrepresentationError, ScriptWriter
 from owp.script.llm_writer import LlmScriptWriter
-from owp.script.verify import verify_citations
+from owp.script.verify import verify_cast, verify_quotes
 
-__all__ = ["ScriptWriter", "UncitedClaimError", "LlmScriptWriter", "verify_citations"]
+__all__ = [
+    "LlmScriptWriter",
+    "MisrepresentationError",
+    "ScriptWriter",
+    "verify_cast",
+    "verify_quotes",
+]

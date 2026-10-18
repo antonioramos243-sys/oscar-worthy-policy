@@ -4,31 +4,33 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from owp.models import NarrativeFormat, PolicySnapshot, Script
+from owp.models import NarrativeFormat, PolicyCorpus, Script
 
 
 class ScriptWriter(Protocol):
-    """Writes a video script from a policy snapshot."""
+    """Writes video scripts from a policy corpus."""
+
+    def practices(self, corpus: PolicyCorpus, *, limit: int) -> list[str]:
+        """Identify the distinct data practices worth a video each (Q2.2)."""
+        ...
 
     def write(
         self,
-        snapshot: PolicySnapshot,
+        corpus: PolicyCorpus,
         *,
+        practice: str,
         format: NarrativeFormat,
         target_seconds: float,
     ) -> Script:
-        """Produce one script.
-
-        Whether a policy yields one video or several, each on a different
-        practice, is open (Q2.2); this signature returns one script per call,
-        so either shape works by calling it repeatedly.
-        """
+        """Produce one script about one practice."""
         ...
 
 
-class UncitedClaimError(ValueError):
-    """Raised when a generated script makes a factual claim with no supporting quote.
+class MisrepresentationError(ValueError):
+    """Raised when a script's cited quote is not in the policy corpus.
 
-    Accuracy is treated as a hard constraint rather than a score, so this is an
-    error and not a warning (Q2.7, Q4.6).
+    Q2.7 does not require citations - review covers accuracy - but it does
+    require that videos not misrepresent the policy. Where the writer supplies
+    a quote, it must be real. Q4.6 makes accuracy a hard constraint, so this is
+    an error rather than a score.
     """

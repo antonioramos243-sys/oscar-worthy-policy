@@ -1,26 +1,36 @@
 """Notification delivery.
 
-STUB. Q3.2 lists six candidate channels (Firebase push to a companion app,
-SMS, email, Telegram, Slack, Google Chat) and they are not interchangeable in
-effort: push needs an app built and shipped to one phone, while Telegram is an
-afternoon. That decision should be made before this is written.
+STUB. Q3.2 asks for whichever channel is simplest to engineer, and Q3.3/Q3.5
+decide most of it: the link opens a small web page carrying the video, caption
+and hashtags, and that page requires authentication.
 
-Worth deciding alongside it: Q3.5, whether links expire and require auth, or an
-unguessable signed URL is enough. A policy-video link is low-stakes, but the
-answer changes whether this module needs an auth story at all.
+That makes email the simplest channel that still satisfies everything: no
+companion app to build and ship to one phone (Firebase push), no bot to
+register (Telegram), no per-message cost or carrier rules (SMS). iOS already
+pushes mail notifications, which is what Q3.2's 'phone notification' needs.
+
+The authenticated page is the actual work. Simplest on GCP: Cloud Run behind
+Identity-Aware Proxy restricted to one Google account, which hands off auth
+entirely rather than building sign-in.
+
+Q3.10: pipeline failure and low-inventory alerting is out of scope here -
+Cloud Monitoring handles it.
 """
 
 from __future__ import annotations
 
 from owp.models import ScheduledPost
-from owp.schedule.base import Notifier
 
 
-class PushNotifier(Notifier):
-    """Sends a push notification with a link to the finished video."""
+class EmailNotifier:
+    """Emails a link to the authenticated review page."""
+
+    def __init__(self, *, to_address: str, review_base_url: str) -> None:
+        self.to_address = to_address
+        self.review_base_url = review_base_url
 
     def notify(self, post: ScheduledPost) -> None:
         raise NotImplementedError(
-            "Notification is not implemented. Blocked on Q3.2 (channel) and Q3.3 (what the "
-            "link opens)."
+            "Notification is not implemented. Needs the review page to exist first "
+            "(Q3.3: video, caption and hashtags on one authenticated page)."
         )

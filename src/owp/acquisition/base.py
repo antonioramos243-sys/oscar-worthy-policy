@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from owp.models import Category, PolicySnapshot, Target
+from owp.models import Category, PolicyCorpus, Target
 
 
 class TargetSource(Protocol):
     """Supplies the ranked list of companies to cover.
 
-    Two implementations are expected: a hand-curated list (good enough for the
-    MVP) and a Sensor Tower client once a license is confirmed (Q1.3).
+    Q1.3: no Sensor Tower license, and no API integration is wanted. Rankings
+    are looked up once while building the initial index, so the shipped
+    implementation is a curated list rather than a client.
     """
 
     def targets(self, category: Category | None = None) -> list[Target]:
@@ -20,17 +21,18 @@ class TargetSource(Protocol):
 
 
 class PolicyFetcher(Protocol):
-    """Turns a target's policy URL into a stored snapshot."""
+    """Turns a target's policy URLs into one merged corpus."""
 
-    def fetch(self, target: Target) -> list[PolicySnapshot]:
-        """Fetch every in-scope policy for one target.
+    def fetch(self, target: Target) -> PolicyCorpus:
+        """Fetch and merge every in-scope policy for one target.
 
-        Returns a list because a single company may have several in-scope
-        documents (main, cookie, regional) - which is open (Q1.4).
+        Returns a single corpus, not a document per policy: Q1.4 asks for the
+        main, cookie and other policies combined so one video can tell a
+        cohesive story about how a platform uses data.
 
         Raises:
             ExtractionFailed: when no usable text could be extracted. Callers
-                should fall back to manual upload (Q1.7) rather than retrying.
+                fall back to manual upload (Q1.7) rather than retrying.
         """
         ...
 

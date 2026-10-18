@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from owp.acquisition.curated import EXPECTED_COUNTS, CuratedTargetSource
+import json
+from pathlib import Path
+
+import pytest
+
+from owp.acquisition.curated import (
+    EXPECTED_COUNTS,
+    CuratedTargetSource,
+    DuplicateTargetError,
+)
 from owp.models import Category
 
 
@@ -18,5 +27,20 @@ def test_filtering_by_category() -> None:
 
 
 def test_shortfall_reports_the_placeholder_list_as_incomplete() -> None:
-    # The checked-in list is a stub; it must not read as a complete set of 40.
     assert CuratedTargetSource().shortfall()
+
+
+def test_duplicate_slug_across_categories_is_an_error(tmp_path: Path) -> None:
+    # Q1.1: a duplicate must be replaced by the next-ranked entry, so its
+    # presence in the list is a curation mistake, not a runtime condition.
+    path = tmp_path / "targets.json"
+    path.write_text(
+        json.dumps(
+            [
+                {"slug": "instagram", "company": "Instagram", "category": "social", "rank": 1},
+                {"slug": "instagram", "company": "Instagram", "category": "top_app", "rank": 3},
+            ]
+        )
+    )
+    with pytest.raises(DuplicateTargetError, match="instagram"):
+        CuratedTargetSource(path).targets()
