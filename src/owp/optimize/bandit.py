@@ -25,14 +25,8 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from owp.models import NarrativeFormat
-from owp.optimize.arms import (
-    POSTING_HOURS,
-    Arm,
-    HookStyle,
-    LengthBucket,
-    VisualStyle,
-)
+from owp.models import NarrativeFormat, VisualStyle
+from owp.optimize.arms import POSTING_HOURS, Arm, HookStyle, LengthBucket
 
 #: Q4.9: about three weeks at four posts a week.
 EXPLORATION_POSTS = 12

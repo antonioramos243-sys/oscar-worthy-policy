@@ -40,41 +40,51 @@ coverage if that is ever revisited.
 | 2.1 | **Unanswered** | All of `NarrativeFormat` stays in scope |
 | 2.2 | Several videos per policy, each on one practice | `Script.practice`, `ScriptWriter.practices` |
 | 2.3 | 30–90 seconds | `LengthBucket` |
-| 2.4 | Animation, characters consistent **across** videos | `owp.cast`, `cast.json`, `verify_cast` |
+| 2.4 | Animation, characters consistent **across** videos | `owp.cast`, `verify_cast`, `HybridRenderer` |
 | 2.5 | Synthetic voice | `owp.voice` |
 | 2.6 | Any model, balancing cost / engineering overhead / quality. A perceived quality score is applied per video and may block posting; dimensions include animation quality, character and narrative consistency, storyline quality | `QualityScore`, `Pipeline.record_review` |
 | 2.7 | Citations not required — personal review covers accuracy — but videos must not misrepresent the policy | `verify_quotes` checks only quotes that are supplied |
 | 2.8 | Name the company and use its logo | prompt, `LlmScriptWriter` |
 | 2.9 | Optimize for engaging, shareable videos | `owp.optimize` |
-| 2.10 | **Weekly operational cost ≤ $25** | `owp.budget`, enforced in `Pipeline.produce` |
+| 2.10 | **Weekly operational cost ≤ $25 — confirmed firm** | `owp.budget`, enforced in `Pipeline.produce` |
 
-### The Q2.4 / Q2.10 conflict
+### The Q2.4 / Q2.10 conflict: resolved as hybrid
 
-These two answers pull against each other, and it is the most important thing
-in this document.
+**Decided 2026-10-18: hybrid rendering, and the $25/week cap is firm.**
 
-Veo 3.1 published per-second rates, at four 60-second videos a week:
+Drawn characters composited over generated background plates. Each technique
+is used where it is strong: generated video gives cheap visual variety, drawn
+assets give character consistency, which is the thing generative models are
+worst at holding across separate generations.
 
-| Tier | Per 60s video | Per week | Within $25? |
+The cap only permits this if plates are a **reusable library rather than a
+per-video cost**. Generated per video, backgrounds cost about $12/week forever
+- half the cap. Generated once and reused, the same spend is a one-off:
+
+| Plates | Seconds | One-time cost | Share of one week's cap |
 |---|---|---|---|
-| Lite 720p | $3.00 | $12.00 | yes |
-| Lite 1080p | $4.80 | $19.20 | yes, little headroom |
-| Fast | $12.00 | $48.00 | no |
-| Standard | $30.00 | $120.00 | no |
+| 20 | 160 | $8.00 | 32% |
+| 30 | 240 | $12.00 | 48% |
+| 60 | 480 | $24.00 | 96% |
 
-Discarded takes bill too, and Q2.6 introduces a quality score that may reject a
-video, so cost per *posted* video is higher: at 50% rejection even Lite 720p
-reaches ~$24/week. Generative video also makes cross-video character
-consistency a modelling problem rather than a solved one.
+Reserving the $0.64 that four videos cost, **60 plates can be generated in a
+single week** alongside normal output. After that, steady-state cost is TTS plus
+one LLM call - about **$0.16 a video, or $0.64/week at four a week, 2.6% of the
+cap**. Enforced by `PlateLibrary.affordable_batch`, which truncates a batch to
+what the week affords rather than rejecting it, so the library grows weekly.
 
-Asset-based 2D animation — a cast drawn once, animated locally with ffmpeg —
-costs about **$0.16 per video** (TTS plus one LLM call), which is roughly 150
-videos a week inside the cap, and makes consistency free because episode 12
-uses the same artwork as episode 1. The cost moves up front, into drawing the
-cast.
+Rates are Veo 3.1 Lite 720p at $0.05/second, from third-party summaries;
+confirm against Google's own pricing page before relying on them.
 
-`AssetAnimationRenderer` is therefore the recommended default and
-`GenerativeRenderer` is scaffolded beside it. **Not yet decided.**
+**Full generative rendering was rejected and is not in the codebase.** A firm
+$25 cap rules out every tier above Lite, and Lite is exactly where
+`animation_quality` and `character_consistency` - two of the four quality
+dimensions in Q2.6 - score worst. Paying for takes that the quality score then
+rejects is the worst of both.
+
+Remaining dependency is artwork, not a decision: `cast.json` has placeholder
+appearances and no `asset_dir`, and `plates.json` has four placeholder prompts.
+Nothing renders until the cast is drawn.
 
 Also unresolved: Q2.9 asks for tone guardrails and the answer describes an
 optimization goal instead, while Q4.6 makes tone a hard constraint. A hard
@@ -146,6 +156,13 @@ rather than per arm.
 ## Still needed
 
 1. **Q2.1** — which narrative formats are in scope.
-2. **Asset-based vs generative animation** — the Q2.4/Q2.10 conflict above.
-3. **Tone limit** — Q4.6 makes it a hard constraint; Q2.9 never set one.
-4. **Confirm the objective proxy** — reach + 10 × shares for "inform people".
+2. **Tone limit** — Q4.6 makes it a hard constraint; Q2.9 never set one.
+3. **Confirm the objective proxy** — reach + 10 × shares for "inform people".
+
+Resolved since the first pass: the animation approach (hybrid, above).
+
+## Not a decision — just work
+
+- Draw the character cast and fill in `cast.json` (`appearance`, `asset_dir`).
+- Write real plate prompts in `plates.json`, then generate a first batch.
+- Install ffmpeg and implement `HybridRenderer.render`.

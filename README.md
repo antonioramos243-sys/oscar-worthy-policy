@@ -23,13 +23,18 @@ Requirements are settled: see [docs/requirements-decisions.md](docs/requirements
 | 2a. Script writer | `owp.script` | Stubbed; quote + cast verification **work** |
 | 2b. Voiceover | `owp.voice` | Stubbed (Cloud TTS) |
 | 2c. Captions | `owp.captions` | **Works** — cue chunking and SRT |
-| 2d. Render | `owp.render` | Two paths scaffolded; **animation approach not decided** |
+| 2d. Render | `owp.render` | **Hybrid chosen**; plan resolution works, ffmpeg stubbed |
+| — Plate library | `owp.render.plates` | **Works** — reusable backgrounds, budget-aware batching |
 | — Character cast | `owp.cast` | **Works** — cast registry; artwork not drawn |
 | — Budget cap | `owp.budget` | **Works** — $25/week enforced before spending |
 | 3. Schedule | `owp.schedule.slots` | **Works** — 4/week, Eastern, 09:00–22:00 |
 | 3. Notify | `owp.schedule.notifier` | Stubbed (email; needs the review page) |
 | 4. Metrics | `owp.metrics` | Stubbed (Creator account confirmed) |
 | 4. Optimizer | `owp.optimize` | **Works** — factored bandit, objective, 5 variables |
+
+**Before anything renders:** the cast has to be drawn. `cast.json` holds
+placeholder appearances with no `asset_dir`, and `plates.json` holds four
+placeholder prompts. That is the gating dependency now — not a decision.
 
 ## Setup
 
@@ -49,6 +54,7 @@ Needed when the matching stage is built, not installed yet: `ffmpeg`
 
 ```bash
 .venv/bin/owp targets    # the 40-target set and what it is missing
+.venv/bin/owp plates     # background plate library and what fits this week
 .venv/bin/owp slots      # next posting slots, Eastern, inside quiet hours
 .venv/bin/owp budget     # which generation tiers fit $25/week
 .venv/bin/owp cast       # the recurring characters
@@ -70,10 +76,23 @@ cost is billed per second of generated video, so `Pipeline.produce` checks
 `owp.budget.check_affordable` *before* rendering. A billing alert tells you
 after the money is gone.
 
-**Character consistency is a state problem, not a rendering problem.** Q2.4
-wants the same characters across every video, so the cast lives in `cast.json`
-with a stable id per character, and `verify_cast` fails a script that names an
-unknown one. Both renderers read the same cast.
+**Rendering is hybrid: drawn characters over generated backgrounds.** Each
+technique is used where it is strong. Backgrounds come from a generated plate
+library built once and reused, so visual variety is cheap; characters are drawn
+assets composited on top, so consistency across videos is structural rather
+than something a model has to hold. See
+[docs/requirements-decisions.md](docs/requirements-decisions.md).
+
+**The plate library is reusable by design, and that is what makes the budget
+work.** Generating backgrounds per video costs ~$12/week forever, half the cap.
+Generating them once costs ~$24 one-off for 60 plates, after which a video
+costs about $0.16 — $0.64/week at four a week. `PlateLibrary.affordable_batch`
+truncates a batch to what the week affords instead of rejecting it, so the
+library grows weekly.
+
+**Character consistency is a state problem, not a rendering problem.** The cast
+lives in `cast.json` with a stable id per character, and `verify_cast` fails a
+script that names an unknown one before anything renders.
 
 **Captions come from TTS timepoints, not forced alignment.** Cloud TTS reports
 timepoints for SSML `<mark>` elements; feeding those to

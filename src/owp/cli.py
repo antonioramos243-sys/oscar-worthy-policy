@@ -20,6 +20,7 @@ from owp.cast import Cast
 from owp.config import Settings
 from owp.models import POSTING_TZ, Category, WordTiming
 from owp.optimize.arms import all_arms
+from owp.render.plates import DEFAULT_USD_PER_SECOND, PlateLibrary
 from owp.schedule.slots import DEFAULT_PER_WEEK, slots
 
 app = typer.Typer(help="Oscar Worthy Policy - privacy policies as short narrative videos.")
@@ -75,6 +76,35 @@ def cast() -> None:
 def arms() -> None:
     """Report the size of the optimizer's variant space."""
     typer.echo(f"{len(all_arms())} arms across 5 variables")
+
+
+@app.command()
+def plates(reserve: float = 0.64) -> None:
+    """Show the background plate library and what fits this week's budget.
+
+    `reserve` holds back budget for the week's videos (4 x $0.16 by default).
+    """
+    from datetime import datetime as _dt
+
+    library = PlateLibrary.load()
+    ready, pending = library.generated(), library.pending()
+    typer.echo(f"{len(ready)} generated, {len(pending)} pending")
+
+    if pending:
+        full = library.generation_cost(pending, usd_per_second=DEFAULT_USD_PER_SECOND)
+        batch = library.affordable_batch(
+            [], _dt.now(POSTING_TZ), usd_per_second=DEFAULT_USD_PER_SECOND, reserve_usd=reserve
+        )
+        batch_cost = library.generation_cost(batch, usd_per_second=DEFAULT_USD_PER_SECOND)
+        typer.echo(f"all pending would cost ${full:.2f}")
+        typer.echo(
+            f"affordable now:  {len(batch)} plates, ${batch_cost:.2f} "
+            f"(reserve ${reserve:.2f})"
+        )
+
+    for plate in library.plates:
+        mark = "ready  " if plate.generated else "pending"
+        typer.echo(f"  {mark} {plate.style.value:10} {plate.id}")
 
 
 @app.command()

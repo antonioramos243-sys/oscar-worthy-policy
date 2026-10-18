@@ -91,6 +91,18 @@ class PolicyCorpus(BaseModel):
         return [s.kind for s in self.sources]
 
 
+class VisualStyle(StrEnum):
+    """Variations within the animation direction set by Q2.4.
+
+    Shared contract: the optimizer varies it (Q4.4) and the renderer uses it to
+    pick a background plate set, so it lives here rather than in either.
+    """
+
+    FLAT = "flat"
+    NOIR = "noir"
+    CORPORATE = "corporate"
+
+
 class NarrativeFormat(StrEnum):
     """Candidate video formats.
 

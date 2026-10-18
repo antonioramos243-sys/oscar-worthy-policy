@@ -28,7 +28,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
-from owp.models import NarrativeFormat
+from owp.models import NarrativeFormat, VisualStyle
 
 
 class HookStyle(StrEnum):
@@ -47,14 +47,6 @@ class LengthBucket(StrEnum):
     @property
     def seconds(self) -> float:
         return {"30s": 30.0, "60s": 60.0, "90s": 90.0}[self.value]
-
-
-class VisualStyle(StrEnum):
-    """Variations within animation, not alternatives to it (Q2.4)."""
-
-    FLAT = "flat"
-    NOIR = "noir"
-    CORPORATE = "corporate"
 
 
 #: Hours the optimizer may choose, all inside the 09:00-22:00 window (Q3.9).

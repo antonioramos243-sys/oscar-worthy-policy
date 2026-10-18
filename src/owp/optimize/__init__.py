@@ -1,13 +1,7 @@
 """Component 4: variant selection and optimization."""
 
-from owp.optimize.arms import (
-    POSTING_HOURS,
-    Arm,
-    HookStyle,
-    LengthBucket,
-    VisualStyle,
-    all_arms,
-)
+from owp.models import VisualStyle
+from owp.optimize.arms import POSTING_HOURS, Arm, HookStyle, LengthBucket, all_arms
 from owp.optimize.bandit import EXPLORATION_POSTS, FactoredBandit
 from owp.optimize.objective import SHARE_WEIGHT, MetricsUnavailable, informed_score
 
